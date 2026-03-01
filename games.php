@@ -848,4 +848,42 @@ function games_pacman_shortcode($atts = array()) {
 }
 add_shortcode('games_pacman', 'games_pacman_shortcode');
 
+function games_register_pacman_route() {
+    add_rewrite_tag('%games_pacman%', '1');
+    add_rewrite_rule('^games/pacman/?$', 'index.php?games_pacman=1', 'top');
+}
+add_action('init', 'games_register_pacman_route');
+
+function games_query_vars($vars) {
+    $vars[] = 'games_pacman';
+    return $vars;
+}
+add_filter('query_vars', 'games_query_vars');
+
+function games_pacman_template_redirect() {
+    if (get_query_var('games_pacman')) {
+        status_header(200);
+        nocache_headers();
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
+        wp_enqueue_style('games-pacman');
+        wp_enqueue_script('games-pacman');
+        wp_print_styles(array('games-pacman'));
+        wp_print_scripts(array('games-pacman'));
+        echo '</head><body style="margin:0;padding:20px;background:#111;color:#fff;font-family:system-ui, sans-serif">';
+        echo '<h1 style="margin:0 0 12px 0;font-size:18px">Games: Pacman</h1>';
+        echo games_pacman_shortcode();
+        echo '</body></html>';
+        exit;
+    }
+}
+add_action('template_redirect', 'games_pacman_template_redirect');
+
+if (!function_exists('games_activate')) {
+    function games_activate() {
+        games_register_pacman_route();
+        flush_rewrite_rules();
+    }
+    register_activation_hook(__FILE__, 'games_activate');
+}
+
 ?>

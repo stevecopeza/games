@@ -1,6 +1,6 @@
 ;(function(){
   var TILE=16, COLS=28, ROWS=31, W=COLS*TILE, H=ROWS*TILE, FRAME=1000/60;
-  var MAZE=[
+  var BASE_MAZE=[
     "############################",
     "#............##............#",
     "#.####.#####.##.#####.####.#",
@@ -27,6 +27,10 @@
     "#..........................#",
     "############################"
   ];
+  var MAZE=BASE_MAZE.slice(0);
+  function resetMaze(){
+    MAZE=BASE_MAZE.slice(0);
+  }
   function buildWalls(){
     var c=document.createElement('canvas'); c.width=W; c.height=H;
     var g=c.getContext('2d'); g.imageSmoothingEnabled=false;
@@ -54,6 +58,15 @@
   }
   function at(cell){ return MAZE[cell.y] && MAZE[cell.y][cell.x]; }
   function isWall(cell){ return at(cell)==="#"; }
+  function pelletsRemaining(){
+    var n=0;
+    for(var r=0;r<MAZE.length;r++){
+      for(var cX=0;cX<MAZE[r].length;cX++){
+        var ch=MAZE[r][cX]; if(ch==="."||ch==="o") n++;
+      }
+    }
+    return n;
+  }
   function toCell(pos){ return {x:(pos.x/TILE)|0,y:(pos.y/TILE)|0}; }
   function center(cell){ return {x:cell.x*TILE+TILE/2,y:cell.y*TILE+TILE/2}; }
   var DIRV={left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:-1},down:{x:0,y:1}};
@@ -70,16 +83,29 @@
   function Game(canvas){
     var walls=buildWalls(), ctx=canvas.getContext('2d');
     var pac={pos:center({x:13,y:17}),dir:DIRV.left,next:null,speed:1.3,score:0};
-    var ghost={pos:center({x:13,y:11}),dir:{x:0,y:0},speed:1};
+    var ghost={pos:center({x:13,y:11}),dir:DIRV.left,speed:1};
+    function atCenter(pos){
+      var c=center(toCell(pos));
+      return Math.abs(pos.x-c.x)<0.2 && Math.abs(pos.y-c.y)<0.2;
+    }
+    function restartLevel(){
+      resetMaze();
+      walls=buildWalls();
+      pac.pos=center({x:13,y:17}); pac.dir=DIRV.left; pac.next=null;
+      ghost.pos=center({x:13,y:11}); ghost.dir=DIRV.left;
+    }
     function step(){
       var c=toCell(pac.pos);
       if(pac.next && canMove(c,pac.next)){ pac.dir=DIRV[pac.next]; pac.next=null; }
       var ahead={x:c.x+pac.dir.x,y:c.y+pac.dir.y}; if(ahead.x<0) ahead.x=COLS-1; if(ahead.x>=COLS) ahead.x=0;
       if(!isWall(ahead)){ pac.pos.x+=pac.dir.x*pac.speed; pac.pos.y+=pac.dir.y*pac.speed; } else { pac.pos=center(c); }
       var c2=toCell(pac.pos); pac.score+=eat(c2);
+      if(pelletsRemaining()===0){ restartLevel(); return; }
       var gc=toCell(ghost.pos);
-      var choices=['left','right','up','down'].filter(function(d){ return canMove(gc,d); });
-      if(choices.length){ var d=choices[(Math.random()*choices.length)|0]; ghost.dir=DIRV[d]; }
+      if(atCenter(ghost.pos)){
+        var choices=['left','right','up','down'].filter(function(d){ return canMove(gc,d); });
+        if(choices.length){ var d=choices[(Math.random()*choices.length)|0]; ghost.dir=DIRV[d]; }
+      }
       var ga={x:gc.x+ghost.dir.x,y:gc.y+ghost.dir.y}; if(ga.x<0)ga.x=COLS-1; if(ga.x>=COLS)ga.x=0;
       if(!isWall(ga)){ ghost.pos.x+=ghost.dir.x*ghost.speed; ghost.pos.y+=ghost.dir.y*ghost.speed; } else { ghost.pos=center(gc); }
     }

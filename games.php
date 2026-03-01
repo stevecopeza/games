@@ -829,7 +829,7 @@ if ( class_exists( 'wgames_Main' ) ) {
  }
 
 function games_register_assets() {
-    wp_register_script('games-pacman', plugins_url('assets/js/pacman.js', __FILE__), array(), '0.1.0', true);
+    wp_register_script('games-pacman', plugins_url('assets/js/pacman.js', __FILE__), array(), '0.1.0', false);
     wp_register_style('games-pacman', plugins_url('assets/css/pacman.css', __FILE__), array(), '0.1.0');
 }
 add_action('init', 'games_register_assets');
@@ -871,7 +871,12 @@ function games_pacman_template_redirect() {
         wp_print_scripts(array('games-pacman'));
         echo '</head><body style="margin:0;padding:20px;background:#111;color:#fff;font-family:system-ui, sans-serif">';
         echo '<h1 style="margin:0 0 12px 0;font-size:18px">Games: Pacman</h1>';
-        echo games_pacman_shortcode();
+        $id = 'games-pacman-canvas-' . wp_rand(1, 9999999);
+        echo '<div class="games-pacman">';
+        echo '<canvas id="' . esc_attr($id) . '" width="448" height="496"></canvas>';
+        echo '<div class="games-pacman-ui"><span class="label">Score</span> <span class="score" id="' . esc_attr($id) . '-score">0</span></div>';
+        echo '</div>';
+        echo '<script>(function(){function s(){if(window.GamesPacman&&window.GamesPacman.start){window.GamesPacman.start("#' . esc_js($id) . '","#' . esc_js($id) . '-score");} else {setTimeout(s,50);}} s();})();</script>';
         echo '</body></html>';
         exit;
     }

@@ -27,23 +27,30 @@
     "#..........................#",
     "############################"
   ];
-  function buildMap(){
+  function buildWalls(){
     var c=document.createElement('canvas'); c.width=W; c.height=H;
     var g=c.getContext('2d'); g.imageSmoothingEnabled=false;
     for(var r=0;r<MAZE.length;r++){
       for(var cX=0;cX<MAZE[r].length;cX++){
         var ch=MAZE[r][cX];
         if(ch==="#"){ g.fillStyle="#2e5cff"; g.fillRect(cX*TILE,r*TILE,TILE,TILE); }
-        else{
-          g.fillStyle="#111"; g.fillRect(cX*TILE,r*TILE,TILE,TILE);
-          if(ch==="."||ch==="o"){
-            g.fillStyle="#ffde8a"; g.beginPath();
-            g.arc(cX*TILE+TILE/2,r*TILE+TILE/2, ch==="."?2:4,0,Math.PI*2); g.fill();
-          }
-        }
+        else{ g.fillStyle="#111"; g.fillRect(cX*TILE,r*TILE,TILE,TILE); }
       }
     }
     return c;
+  }
+  function drawPellets(ctx){
+    ctx.fillStyle="#ffde8a";
+    for(var r=0;r<MAZE.length;r++){
+      for(var cX=0;cX<MAZE[r].length;cX++){
+        var ch=MAZE[r][cX];
+        if(ch==="."||ch==="o"){
+          ctx.beginPath();
+          ctx.arc(cX*TILE+TILE/2, r*TILE+TILE/2, ch==="."?2:4, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
   }
   function at(cell){ return MAZE[cell.y] && MAZE[cell.y][cell.x]; }
   function isWall(cell){ return at(cell)==="#"; }
@@ -61,7 +68,7 @@
     return 0;
   }
   function Game(canvas){
-    var map=buildMap(), ctx=canvas.getContext('2d');
+    var walls=buildWalls(), ctx=canvas.getContext('2d');
     var pac={pos:center({x:13,y:17}),dir:DIRV.left,next:null,speed:1.3,score:0};
     var ghost={pos:center({x:13,y:11}),dir:{x:0,y:0},speed:1};
     function step(){
@@ -77,7 +84,8 @@
       if(!isWall(ga)){ ghost.pos.x+=ghost.dir.x*ghost.speed; ghost.pos.y+=ghost.dir.y*ghost.speed; } else { ghost.pos=center(gc); }
     }
     function draw(){
-      ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H); ctx.drawImage(map,0,0);
+      ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H); ctx.drawImage(walls,0,0);
+      drawPellets(ctx);
       ctx.fillStyle="#ffe400"; ctx.beginPath(); ctx.arc(pac.pos.x,pac.pos.y,TILE/2-1,0,Math.PI*2); ctx.fill();
       ctx.fillStyle="#00ffff"; ctx.beginPath(); ctx.arc(ghost.pos.x,ghost.pos.y,TILE/2-1,0,Math.PI*2); ctx.fill();
     }
@@ -104,6 +112,14 @@
       if(!node) return;
       var cv=node.getContext ? node : document.createElement('canvas');
       if(!node.getContext){ cv.width=W; cv.height=H; node.appendChild(cv); }
+      // Fit canvas to window while preserving aspect ratio
+      function fit(){
+        var vw=window.innerWidth, vh=window.innerHeight;
+        var scale=Math.min(vw/W, vh/H)*0.95;
+        cv.style.width=(W*scale|0)+'px';
+        cv.style.height=(H*scale|0)+'px';
+      }
+      window.addEventListener('resize', fit); fit();
       var g=Game(cv); setDir=function(dir){ g.setNext(dir); };
       function loop(){ var s=g.frame(); if(scoreNode) scoreNode.textContent=String(s); requestAnimationFrame(loop); }
       requestAnimationFrame(loop);

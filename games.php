@@ -829,8 +829,12 @@ if ( class_exists( 'wgames_Main' ) ) {
  }
 
 function games_register_assets() {
-    wp_register_script('games-pacman', plugins_url('assets/js/pacman.js', __FILE__), array(), '0.1.0', false);
-    wp_register_style('games-pacman', plugins_url('assets/css/pacman.css', __FILE__), array(), '0.1.0');
+    $js = plugins_url('assets/js/pacman2.js', __FILE__);
+    $css = plugins_url('assets/css/pacman.css', __FILE__);
+    $ver_js = @filemtime(plugin_dir_path(__FILE__) . 'assets/js/pacman2.js') ?: time();
+    $ver_css = @filemtime(plugin_dir_path(__FILE__) . 'assets/css/pacman.css') ?: time();
+    wp_register_script('games-pacman', $js, array(), $ver_js, false);
+    wp_register_style('games-pacman', $css, array(), $ver_css);
 }
 add_action('init', 'games_register_assets');
 
